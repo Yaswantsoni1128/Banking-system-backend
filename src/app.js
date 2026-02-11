@@ -20,12 +20,14 @@ app.use(morgan("dev")); // To log HTTP requests in the "dev" format
  */
 import authRoutes from "./routes/auth.routes.js";
 import accountRoutes from "./routes/account.routes.js";
+import transactionRoutes from "./routes/transaction.routes.js";
 
 /**
  * Mount routes
  */
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/accounts", accountRoutes);
+app.use("/api/v1/transactions", transactionRoutes);
 
 connectDB();
 
