@@ -30,3 +30,22 @@ export const sendRegistrationEmail = async (user) => {
     html: `<h1>Hello ${user.name},</h1><p>Thank you for registering!</p>`,
   });
 };
+
+
+export const sendTransactionEmail = async (email, name, toAccount, transaction) => {
+  await sendEmail({
+    to: email,
+    subject: "Transaction Alert",
+    text: `Hello ${name},\n\nA transaction of amount ${transaction.amount} has been made to account ${toAccount}.`,
+    html: `<h1>Hello ${name},</h1><p>A transaction of amount ${transaction.amount} has been made to account ${toAccount}.</p><br/><p>Transaction ID: ${transaction._id}</p><br/><p>Date: ${transaction.createdAt}</p><br/><p>Status: ${transaction.status}</p><br/><p>Thank you for using our service!</p>`,
+  });
+};
+
+export const sendFailedTransactionEmail = async (email, name, toAccount, transaction) => {
+  await sendEmail({
+    to: email,
+    subject: "Transaction Failed",
+    text: `Hello ${name},\n\nA transaction of amount ${transaction.amount} to account ${toAccount} has failed.`,
+    html: `<h1>Hello ${name},</h1><p>A transaction of amount ${transaction.amount} to account ${toAccount} has failed.</p><br/><p>Transaction ID: ${transaction._id}</p><br/><p>Date: ${transaction.createdAt}</p><br/><p>Status: ${transaction.status}</p><br/><p>Please try again later or contact support.</p>`,
+  });
+};
