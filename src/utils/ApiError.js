@@ -5,5 +5,5 @@ class ApiError extends Error {
     this.isOperational = true;
   }
 }
-
+ 
 export default ApiError;
