@@ -29,7 +29,7 @@ const transactionController = {
        * - Validate idempotency key
        */
 
-      const isTransationExists = await Transaction({idempotencyKey});
+      const isTransationExists = await Transaction.findOne({idempotencyKey});
       
       if(isTransationExists){
 
@@ -73,61 +73,79 @@ const transactionController = {
         throw new ApiError(400, "Insufficient balance in sender account");
       }
 
-      /**
+      let transaction;
+      
+      try {
+        /**
        * - Create transaction
        */
       const session = await mongoose.startSession();
       session.startTransaction(); // session started
 
-      const transaction = await Transaction.create(
-        {
+      // save transaction with pending status and then update it to completed after saving ledger entries. This is to make sure that if any error occurs while saving ledger entries, we can easily identify the transaction as failed and also we can easily reverse the transaction if needed.
+      transaction = (await Transaction.create(
+        [{
           fromAccount,
           toAccount,
           amount,
           idempotencyKey,
           status: "PENDING"
-        },
-        {
-          session
-        }
-      )
+        }],
+        {session}
+      ))[0]; 
 
       const debitLedger = await Ledger.create(
-        {
+        [{
           account: fromAccount,
           amount,
           transaction: transaction._id,
           type: "DEBIT",
-        },
+        }],
         {
           session
         }
-      )
-      const creaditLedger = await lender.create(
-        {
+      );
+      
+      
+      await new Promise(resolve => setTimeout(resolve, 10000));
+
+
+
+      const creaditLedger = await Ledger.create(
+        [{
           account: toAccount,
           amount,
           transaction: transaction._id,
           type: "CREDIT",
-        },
+        }],
         {
           session
         }
       )
 
-      transaction.status = "COMPLETED";
-      await transaction.save({session});
+      // update transaction status to completed after saving ledger entries
+      transaction = await Transaction.findOneAndUpdate(
+        {_id: transaction._id},
+        {status: "COMPLETED"},
+        {returnDocument: "after", session}
+      )
 
       await session.commitTransaction(); // transaction commited
       session.endSession(); // session ended
 
+      } catch (error) {
+        return res.status(400).json({
+          message: "Transaction is pending due to some error. Please try again later or contact support if the issue persists.",
+        })
+      }
+
 
       /**
-       * - Send notification email to both sender and receiver
+       * - Send notification email to both sender
        */
-      sendTransactionEmail(userFromAccount.email, userFromAccount.name, toAccount, transaction);
-      sendTransactionEmail(userToAccount.email, userToAccount.name, toAccount, transaction);
-     
+
+      await sendTransactionEmail(req.user.email, req.user.name, toAccount, transaction);
+      
       /**
        * - Return response       
       */
@@ -136,6 +154,76 @@ const transactionController = {
         data: transaction
         });
     }),
+
+    /**
+     * - Create initial funds transaction for new accounts
+     */
+    createInitialFundsTransaction: asyncHandler(async (req, res) => {
+        const {toAccount , amount , idempotencyKey} = req.body;
+
+        if(!toAccount || !amount || !idempotencyKey){
+          throw new ApiError(400, "All fields are required");
+        }
+
+        const fetchToAccount = await Account.findOne({_id: toAccount});
+
+        if(!fetchToAccount){
+          throw new ApiError(400, "To account not found");
+        }
+    
+        const fetchSystemAccount = await Account.findOne({ user: req.user._id });
+
+        if(!fetchSystemAccount){
+          throw new ApiError(400, "System account not found");
+        }
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        const transaction = new Transaction(
+          {
+            fromAccount: fetchSystemAccount._id,
+            toAccount,
+            amount,
+            idempotencyKey,
+            status: "PENDING"
+          }
+        )
+
+        const debitLedger = await Ledger.create(
+          [{
+            account: fetchSystemAccount._id,
+            amount,
+            transaction: transaction._id,
+            type: "DEBIT",
+          }],
+          {
+            session
+          }
+        )
+        const creaditLedger = await Ledger.create(
+          [{
+            account: toAccount,
+            amount,
+            transaction: transaction._id,
+            type: "CREDIT",
+          }],
+          {
+            session
+          }
+        )
+
+        transaction.status = "COMPLETED";
+        await transaction.save({session});
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(201).json({
+          message: "Initial funds transaction completed successfully",
+          data: transaction
+        });
+    })
 }
 
 export default transactionController;
