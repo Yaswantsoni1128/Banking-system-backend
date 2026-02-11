@@ -21,7 +21,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     html,
   });
 };
-
+ 
 export const sendRegistrationEmail = async (user) => {
   await sendEmail({
     to: user.email,
