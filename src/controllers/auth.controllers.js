@@ -16,7 +16,7 @@ const authController = {
     const isExists = await User.findOne({email: email})
 
     if(isExists){
-      new ApiError(422, "User already exists");
+      throw new ApiError(422, "User already exists");
     }
 
     const user = await User.create({
@@ -53,13 +53,13 @@ const authController = {
     const user = await User.findOne({email}).select("+password");
 
     if(!user){
-      new ApiError(401, "User not found")
+      throw new ApiError(401, "User not found")
     }
 
     const isMatched = await user.comparePassword(password); // make sure user should be finded user not User 
 
     if(!isMatched){
-      new ApiError(401, "Email or password invalid")
+      throw new ApiError(401, "Email or password invalid")
     }
 
     const token = jwt.sign({userId: user._id},
