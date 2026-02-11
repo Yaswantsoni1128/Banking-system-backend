@@ -23,6 +23,12 @@ import accountRoutes from "./routes/account.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
 
 /**
+ * Health check route
+ */
+app.get("/", (req, res) => {
+  res.send("Banking system API is running");
+});
+/**
  * Mount routes
  */
 app.use("/api/v1/auth", authRoutes);
