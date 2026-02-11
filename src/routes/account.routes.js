@@ -1,10 +1,10 @@
 import express from "express";
-import authMiddleware from "../middlewares/auth.middlewares.js";
+import protect from "../middlewares/auth.middlewares.js";
 import accountController from "../controllers/account.controllers.js";
 
 const router = express.Router();
 
-router.use(authMiddleware);
+router.use(protect.authMiddleware);
 
 /**
  * - POST /api/v1/accounts
@@ -12,5 +12,7 @@ router.use(authMiddleware);
  * - protect route
  */
 router.post("/", accountController.createAccount);
+router.get("/", accountController.getUserAccounts);
+router.get("/balance/:accountId", accountController.getUserBalance);
 
 export default router;
