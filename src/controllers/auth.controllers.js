@@ -3,6 +3,7 @@ import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import { sendRegistrationEmail } from "../services/email.service.js";
+import TokenBlackList from "../models/blackList.models.js";
 
 
 const authController = {
@@ -78,6 +79,27 @@ const authController = {
       },
       token
     })
+  }),
+
+  /*
+    * - User Logout
+  */
+  logoutUser: asyncHandler(async (req, res) => {
+      const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+
+      if (!token) {
+        throw new ApiError(401, "Unauthorized - No token provided");
+      }
+
+      res.clearCookie("token");
+
+      // Add token to blacklist
+      await TokenBlackList.create({ token });
+
+      res.status(200).json({
+        message: "User Logout successfully"
+      });
+
   })
 } 
 
