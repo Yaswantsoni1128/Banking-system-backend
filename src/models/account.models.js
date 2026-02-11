@@ -22,8 +22,8 @@ const accountSchema = new mongoose.Schema({
   }
 },{timestamps: true})
 
-accountSchema.index({ user: 1, status: 1 });  // Compound index
+accountSchema.index({ user: 1, status: 1 });  // Compound index 
 
-const Account = mongoose.model("account", accountSchema)
+const Account = mongoose.model("Account", accountSchema)
 
 export default Account;

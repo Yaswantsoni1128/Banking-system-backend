@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 /**
- * POST /api/v1/accounts
+ * - POST /api/v1/accounts
  * - Create a new account
  * - protect route
  */
